@@ -1,35 +1,20 @@
-import { Handler } from "aws-lambda";
-
+import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
 
-// Initialization
-const ddbDocClient = createDDbDocClient();
+const ddbClient = new DynamoDBClient({ region: process.env.REGION });
 
-// Handler
-export const handler: Handler = async (event, context) => {
+export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
   try {
-    console.log("Event: ", JSON.stringify(event));
-    const parameters = event?.queryStringParameters;
-    const teamId = parameters ? parseInt(parameters.teamId) : undefined;
+    // Print Event
+    console.log("Event: ", event);
 
-    if (!teamId) {
-      return {
-        statusCode: 404,
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({ Message: "Missing team Id" }),
-      };
-    }
-    const commandOutput = await ddbDocClient.send(
-      new GetCommand({
+    const commandOutput = await ddbClient.send(
+      new ScanCommand({
         TableName: process.env.TABLE_NAME,
-        Key: { id: teamId },
       })
     );
-    console.log('GetCommand response: ', commandOutput)
-    if (!commandOutput.Item) {
+    if (!commandOutput.Items) {
       return {
         statusCode: 404,
         headers: {
@@ -39,7 +24,7 @@ export const handler: Handler = async (event, context) => {
       };
     }
     const body = {
-      data: commandOutput.Item,
+      data: commandOutput.Items,
     };
 
     // Return Response

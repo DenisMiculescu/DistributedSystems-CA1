@@ -39,16 +39,42 @@ export class Ca1Stack extends cdk.Stack {
       }
     );
 
-    const getMovieByIdURL = getTeamByIdFn.addFunctionUrl({
+    const getAllTeamsFn = new lambdanode.NodejsFunction(
+      this,
+      "GetAllTeamsFn",
+      {
+        architecture: lambda.Architecture.ARM_64,
+        runtime: lambda.Runtime.NODEJS_18_X,
+        entry: `${__dirname}/../lambdas/getAllTeams.ts`,
+        timeout: cdk.Duration.seconds(10),
+        memorySize: 128,
+        environment: {
+          TABLE_NAME: teamsTable.tableName,
+          REGION: 'eu-west-1',
+        },
+      }
+      );
+
+      const getTeamByIdURL = getTeamByIdFn.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
       cors: {
         allowedOrigins: ["*"],
-      },
+      }
     });
 
-    teamsTable.grantReadData(getTeamByIdFn)
+    const getAllTeamsURL = getAllTeamsFn.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+      cors: {
+        allowedOrigins: ["*"],
+      }
+  })
 
-    new cdk.CfnOutput(this, "Get Movie Function Url", { value: getMovieByIdURL.url });
+
+    // Permissions 
+    teamsTable.grantReadData(getTeamByIdFn)
+    teamsTable.grantReadData(getAllTeamsFn)
+
+    new cdk.CfnOutput(this, "Get Team Function Url", { value: getAllTeamsURL.url });
 
     new custom.AwsCustomResource(this, "teamsddbInitData", {
       onCreate: {
