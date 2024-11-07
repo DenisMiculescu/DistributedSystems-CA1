@@ -1,19 +1,18 @@
 import { Handler } from "aws-lambda";
-
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 
-// Initialization
 const ddbDocClient = createDDbDocClient();
 
-// Handler
-export const handler: Handler = async (event, context) => {
+export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
   try {
-    console.log("Event: ", JSON.stringify(event));
-    const parameters = event?.queryStringParameters;
-    const teamId = parameters ? parseInt(parameters.teamId) : undefined;
+    console.log("[EVENT]", JSON.stringify(event));
 
-    if (!teamId) {
+    const parameters = event?.pathParameters;
+    const id = parameters?.id ? parseInt(parameters.id) : undefined;
+
+    if (!id) {
       return {
         statusCode: 404,
         headers: {
@@ -22,13 +21,19 @@ export const handler: Handler = async (event, context) => {
         body: JSON.stringify({ Message: "Missing team Id" }),
       };
     }
+
+    const includeMembers = event.queryStringParameters?.members === 'true';
+
+    // Get team from DynamoDB
     const commandOutput = await ddbDocClient.send(
       new GetCommand({
         TableName: process.env.TABLE_NAME,
-        Key: { id: teamId },
+        Key: { id: id },
       })
     );
-    console.log('GetCommand response: ', commandOutput)
+
+    console.log("GetCommand response: ", commandOutput);
+
     if (!commandOutput.Item) {
       return {
         statusCode: 404,
@@ -38,9 +43,9 @@ export const handler: Handler = async (event, context) => {
         body: JSON.stringify({ Message: "Invalid team Id" }),
       };
     }
-    const body = {
-      data: commandOutput.Item,
-    };
+
+    const team = commandOutput.Item;
+    const response = includeMembers ? team : { ...team, members: undefined };
 
     // Return Response
     return {
@@ -48,7 +53,7 @@ export const handler: Handler = async (event, context) => {
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ data: response }),
     };
   } catch (error: any) {
     console.log(JSON.stringify(error));
