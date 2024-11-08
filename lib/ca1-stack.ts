@@ -135,12 +135,25 @@ export class Ca1Stack extends cdk.Stack {
       },
     });
 
+    const deleteTeamFn = new lambdanode.NodejsFunction(this, "DeleteTeamFn", {
+      architecture: lambda.Architecture.ARM_64,
+      runtime: lambda.Runtime.NODEJS_18_X,
+      entry: `${__dirname}/../lambdas/deleteTeam.ts`,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        TABLE_NAME: teamsTable.tableName,
+        REGION: "eu-west-1",
+      },
+    });
+
 
     // Permissions 
     teamsTable.grantReadData(getTeamByIdFn)
     teamsTable.grantReadData(getAllTeamsFn)
     teamMembersTable.grantReadData(getTeamMembersFn)
     teamsTable.grantReadWriteData(newTeamFn)
+    teamsTable.grantReadWriteData(deleteTeamFn);
 
     // new cdk.CfnOutput(this, "Get Teams Function Url", { value: getTeamByIdURL.url });
     // new cdk.CfnOutput(this, "Get All Teams Url", { value: getAllTeamsURL.url });
@@ -176,6 +189,11 @@ export class Ca1Stack extends cdk.Stack {
     teamsEndpoint.addMethod(
       "POST",
       new apig.LambdaIntegration(newTeamFn, { proxy: true })
+    );
+
+    teamEndpoint.addMethod(
+      "DELETE",
+      new apig.LambdaIntegration(deleteTeamFn, { proxy: true })
     );
 
   }
