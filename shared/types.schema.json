@@ -1,0 +1,50 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "Team": {
+            "additionalProperties": false,
+            "properties": {
+                "id": {
+                    "type": "number"
+                },
+                "teamDescription": {
+                    "type": "string"
+                },
+                "teamName": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "teamDescription",
+                "teamName"
+            ],
+            "type": "object"
+        },
+        "TeamMember": {
+            "additionalProperties": false,
+            "properties": {
+                "memberDescription": {
+                    "type": "string"
+                },
+                "memberName": {
+                    "type": "string"
+                },
+                "memberPosition": {
+                    "type": "string"
+                },
+                "teamId": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "memberDescription",
+                "memberName",
+                "memberPosition",
+                "teamId"
+            ],
+            "type": "object"
+        }
+    }
+}
+

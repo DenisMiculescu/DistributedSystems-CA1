@@ -85,6 +85,18 @@ export class Ca1Stack extends cdk.Stack {
       }
     );
 
+    const newTeamFn = new lambdanode.NodejsFunction(this, "AddTeamFn", {
+      architecture: lambda.Architecture.ARM_64,
+      runtime: lambda.Runtime.NODEJS_16_X,
+      entry: `${__dirname}/../lambdas/addTeam.ts`,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        TABLE_NAME: teamsTable.tableName,
+        REGION: "eu-west-1",
+      },
+    });
+
     new custom.AwsCustomResource(this, "teamsddbInitData", {
       onCreate: {
         service: "DynamoDB",
@@ -128,6 +140,7 @@ export class Ca1Stack extends cdk.Stack {
     teamsTable.grantReadData(getTeamByIdFn)
     teamsTable.grantReadData(getAllTeamsFn)
     teamMembersTable.grantReadData(getTeamMembersFn)
+    teamsTable.grantReadWriteData(newTeamFn)
 
     // new cdk.CfnOutput(this, "Get Teams Function Url", { value: getTeamByIdURL.url });
     // new cdk.CfnOutput(this, "Get All Teams Url", { value: getAllTeamsURL.url });
@@ -158,6 +171,11 @@ export class Ca1Stack extends cdk.Stack {
     teamEndpoint.addMethod(
       "GET",
       new apig.LambdaIntegration(getTeamByIdFn, { proxy: true })
+    );
+
+    teamsEndpoint.addMethod(
+      "POST",
+      new apig.LambdaIntegration(newTeamFn, { proxy: true })
     );
 
   }
