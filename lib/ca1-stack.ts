@@ -6,8 +6,6 @@ import * as custom from "aws-cdk-lib/custom-resources";
 import { generateBatch } from "../shared/util";
 import { teams, teamMembers } from "../seed/teams";
 import * as apig from "aws-cdk-lib/aws-apigateway";
-
-
 import { Construct } from 'constructs';
 
 export class Ca1Stack extends cdk.Stack {
@@ -34,7 +32,6 @@ export class Ca1Stack extends cdk.Stack {
       indexName: "roleIx",
       sortKey: { name: "memberPosition", type: dynamodb.AttributeType.STRING },
     });
-
 
     //functions
     const getTeamByIdFn = new lambdanode.NodejsFunction(
@@ -71,11 +68,11 @@ export class Ca1Stack extends cdk.Stack {
 
     const getTeamMembersFn = new lambdanode.NodejsFunction(
       this,
-      "GetTeamMembers.Fn",
+      "GetTeamMember.Fn",
       {
         architecture: lambda.Architecture.ARM_64,
         runtime: lambda.Runtime.NODEJS_16_X,
-        entry: `${__dirname}/../lambdas/getTeamMembers.ts`,
+        entry: `${__dirname}/../lambdas/getTeamMember.ts`,
         timeout: cdk.Duration.seconds(10),
         memorySize: 128,
         environment: {
@@ -89,6 +86,18 @@ export class Ca1Stack extends cdk.Stack {
       architecture: lambda.Architecture.ARM_64,
       runtime: lambda.Runtime.NODEJS_16_X,
       entry: `${__dirname}/../lambdas/addTeam.ts`,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        TABLE_NAME: teamsTable.tableName,
+        REGION: "eu-west-1",
+      },
+    });
+
+    const deleteTeamFn = new lambdanode.NodejsFunction(this, "DeleteTeamFn", {
+      architecture: lambda.Architecture.ARM_64,
+      runtime: lambda.Runtime.NODEJS_18_X,
+      entry: `${__dirname}/../lambdas/deleteTeam.ts`,
       timeout: cdk.Duration.seconds(10),
       memorySize: 128,
       environment: {
@@ -114,39 +123,26 @@ export class Ca1Stack extends cdk.Stack {
       }),
     });
 
-    const getTeamByIdURL = getTeamByIdFn.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.NONE,
-      cors: {
-        allowedOrigins: ["*"],
-      }
-    });
+    // const getTeamByIdURL = getTeamByIdFn.addFunctionUrl({
+    //   authType: lambda.FunctionUrlAuthType.NONE,
+    //   cors: {
+    //     allowedOrigins: ["*"],
+    //   }
+    // });
 
-    const getAllTeamsURL = getAllTeamsFn.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.NONE,
-      cors: {
-        allowedOrigins: ["*"],
-      }
-    })
+    // const getAllTeamsURL = getAllTeamsFn.addFunctionUrl({
+    //   authType: lambda.FunctionUrlAuthType.NONE,
+    //   cors: {
+    //     allowedOrigins: ["*"],
+    //   }
+    // })
 
-    const getTeamMembersURL = getTeamMembersFn.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.NONE,
-      cors: {
-        allowedOrigins: ["*"],
-      },
-    });
-
-    const deleteTeamFn = new lambdanode.NodejsFunction(this, "DeleteTeamFn", {
-      architecture: lambda.Architecture.ARM_64,
-      runtime: lambda.Runtime.NODEJS_18_X,
-      entry: `${__dirname}/../lambdas/deleteTeam.ts`,
-      timeout: cdk.Duration.seconds(10),
-      memorySize: 128,
-      environment: {
-        TABLE_NAME: teamsTable.tableName,
-        REGION: "eu-west-1",
-      },
-    });
-
+    // const getTeamMemberURL = getTeamMembersFn.addFunctionUrl({
+    //   authType: lambda.FunctionUrlAuthType.NONE,
+    //   cors: {
+    //     allowedOrigins: ["*"],
+    //   },
+    // });
 
     // Permissions 
     teamsTable.grantReadData(getTeamByIdFn)
@@ -157,7 +153,7 @@ export class Ca1Stack extends cdk.Stack {
 
     // new cdk.CfnOutput(this, "Get Teams Function Url", { value: getTeamByIdURL.url });
     // new cdk.CfnOutput(this, "Get All Teams Url", { value: getAllTeamsURL.url });
-    // new cdk.CfnOutput(this, "Get Team Members Url", { value: getTeamMembersURL.url });
+    // new cdk.CfnOutput(this, "Get Team Members Url", { value: getTeamMemberURL.url });
 
 
     // REST API 
@@ -195,6 +191,12 @@ export class Ca1Stack extends cdk.Stack {
       "DELETE",
       new apig.LambdaIntegration(deleteTeamFn, { proxy: true })
     );
+
+    const teamMembersEndpoint = teamsEndpoint.addResource("members");
+    teamMembersEndpoint.addMethod(
+      "GET",
+      new apig.LambdaIntegration(getTeamMembersFn, { proxy: true })
+);
 
   }
 }

@@ -10,3 +10,9 @@ export type TeamMember = {
     memberPosition: string;
     memberDescription: string;
  };
+
+export type TeamMemberQueryParams = {
+    teamId: string;
+    memberName?: string;
+    memberPosition?: string
+}

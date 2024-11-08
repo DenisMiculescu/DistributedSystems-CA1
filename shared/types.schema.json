@@ -44,6 +44,24 @@
                 "teamId"
             ],
             "type": "object"
+        },
+        "TeamMemberQueryParams": {
+            "additionalProperties": false,
+            "properties": {
+                "memberName": {
+                    "type": "string"
+                },
+                "memberPosition": {
+                    "type": "string"
+                },
+                "teamId": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "teamId"
+            ],
+            "type": "object"
         }
     }
 }
