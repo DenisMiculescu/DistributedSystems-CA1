@@ -45,6 +45,7 @@ export class Ca1Stack extends cdk.Stack {
         memorySize: 128,
         environment: {
           TABLE_NAME: teamsTable.tableName,
+          MEMBERS_TABLE_NAME: teamMembersTable.tableName,
           REGION: 'eu-west-1',
         },
       }
@@ -145,8 +146,9 @@ export class Ca1Stack extends cdk.Stack {
     // });
 
     // Permissions 
-    teamsTable.grantReadData(getTeamByIdFn)
     teamsTable.grantReadData(getAllTeamsFn)
+    teamsTable.grantReadData(getTeamByIdFn)
+    teamMembersTable.grantReadData(getTeamByIdFn)
     teamMembersTable.grantReadData(getTeamMembersFn)
     teamsTable.grantReadWriteData(newTeamFn)
     teamsTable.grantReadWriteData(deleteTeamFn);

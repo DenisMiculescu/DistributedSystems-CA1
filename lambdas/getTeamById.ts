@@ -1,6 +1,6 @@
 import { Handler } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 
 const ddbDocClient = createDDbDocClient();
@@ -25,16 +25,14 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
     const includeMembers = event.queryStringParameters?.members === 'true';
 
     // Get team from DynamoDB
-    const commandOutput = await ddbDocClient.send(
+    const teamResult = await ddbDocClient.send(
       new GetCommand({
         TableName: process.env.TABLE_NAME,
         Key: { id: id },
       })
     );
 
-    console.log("GetCommand response: ", commandOutput);
-
-    if (!commandOutput.Item) {
+    if (!teamResult.Item) {
       return {
         statusCode: 404,
         headers: {
@@ -44,39 +42,49 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
       };
     }
 
-    const team = commandOutput.Item;
-    const response = includeMembers ? team : { ...team, members: undefined };
+    let teamData = teamResult.Item;
 
-    // Return Response
+    // Check if members should be included
+    if (includeMembers) {
+      const membersResult = await ddbDocClient.send(
+        new QueryCommand({
+          TableName: process.env.MEMBERS_TABLE_NAME,
+          KeyConditionExpression: "teamId = :teamId",
+          ExpressionAttributeValues: {
+            ":teamId": id,
+          },
+        })
+      );
+
+      teamData = {
+        ...teamData,
+        members: membersResult.Items || [],
+      };
+    }
+
     return {
       statusCode: 200,
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({ data: response }),
+      body: JSON.stringify({ data: teamData }),
     };
   } catch (error: any) {
-    console.log(JSON.stringify(error));
+    console.error("Error fetching team:", error);
     return {
       statusCode: 500,
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({ error }),
+      body: JSON.stringify({ error: error.message }),
     };
   }
 };
 
 function createDDbDocClient() {
   const ddbClient = new DynamoDBClient({ region: process.env.REGION });
-  const marshallOptions = {
-    convertEmptyValues: true,
-    removeUndefinedValues: true,
-    convertClassInstanceToMap: true,
-  };
-  const unmarshallOptions = {
-    wrapNumbers: false,
-  };
-  const translateConfig = { marshallOptions, unmarshallOptions };
-  return DynamoDBDocumentClient.from(ddbClient, translateConfig);
+  return DynamoDBDocumentClient.from(ddbClient, {
+    marshallOptions: { convertEmptyValues: true, removeUndefinedValues: true },
+    unmarshallOptions: { wrapNumbers: false },
+  });
 }
