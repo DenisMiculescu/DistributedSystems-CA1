@@ -259,6 +259,13 @@ export class Ca1Stack extends cdk.Stack {
       'signup.ts'
     );
 
+    this.addAuthRoute(
+      "confirm_signup",
+      "POST",
+      "ConfirmFn",
+      "confirm-signup.ts"
+    );
+
   }
 
   private addAuthRoute(
