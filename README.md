@@ -23,3 +23,7 @@ e.g.
 ### Update constraint.
 
 I have implemented a PUT constraint which appears in AWS API but I couldn't seem to get it fully working.
+
+### Translation
+
+I attempted to implement the translation feature but did not succeed.
