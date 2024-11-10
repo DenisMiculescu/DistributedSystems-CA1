@@ -6,26 +6,20 @@ __Demo:__ ... link to your YouTube video demonstration ......
 
 ### Context.
 
-State the context you chose for your web API and detail the attributes stored in the main database table.
+The context I chose for my web API was NBA Teams and NBA players. For each team, the attributes stored were a unique id number, the team name, and a description from where the team is from. Each NBA player had a team id that links them to their team, the player's name, and position.
 
 ### App API endpoints.
 
 [ Provide a bullet-point list of the app's endpoints (excluding the Auth API) you have successfully implemented. ]
 e.g.
  
-+ POST /thing - add a new 'thing'.
-+ GET /thing/{partition-key}/ - Get all the 'things' with a specified partition key.
-+ GEtT/thing/{partition-key}?attributeX=value - Get all the 'things' with a specified partition key value and attributeX satisfying the condition .....
++ GET /teams - Get information of all NBA teams (currently there are only 4)
++ GET /teams/1 - Get information on team with id = 1
++ POST /teams - Add a new NBA Team to the database
++ DELETE /teams/1 - Delete NBA Team with id = 1
++ GET /teams/members?teamId=1&memberName=Jayson - Get information on an NBA player whos first name starts with Jayson (Jayson Tatum) and is on  team 1
++ GET /teams/members?teamId=1&memberPosition=Small - Get information on an NBA player whos position starts with Small (Small Forward) and is on  team 1
 
-### Update constraint (if relevant).
+### Update constraint.
 
-[Briefly explain your design for the solution to the PUT/Update constraint 
-- only the user who added an item to the main table could update it.]
-
-### Translation persistence (if relevant).
-
-[Briefly explain your design for the solution to avoid repeat requests to Amazon Translate - persist translations so that Amazon Translate can be bypassed for repeat translation requests.]
-
-###  Extra (If relevant).
-
-[ State whether you have created a multi-stack solution for this assignment or used lambda layers to speed up update deployments. Also, mention any aspect of the CDK framework __that was not covered in the lectures that you used in this assignment. ]
+I have implemented a PUT constraint which appears in AWS API but I couldn't seem to get it fully working.
